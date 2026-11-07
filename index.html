@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>布衣天子 · 古代权谋模拟</title>
+<style>
+:root{
+  --paper:#efe6d2; --paper2:#e6d9bd; --line:#d3c3a0;
+  --ink:#2b2419; --ink2:#5f5340; --seal:#9d2b1e; --seal2:#7a1c12;
+  --gold:#a9822f; --jade:#3d6150; --shadow:0 2px 10px rgba(0,0,0,.16);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    repeating-linear-gradient(0deg,rgba(0,0,0,.02) 0,rgba(0,0,0,.02) 1px,transparent 1px,transparent 24px),
+    radial-gradient(circle at 15% 8%,rgba(157,43,30,.06),transparent 42%),
+    var(--paper);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+  min-height:100vh;font-size:15px;line-height:1.5;
+}
+h1,h2,h3,h4{font-family:"Noto Serif SC","Songti SC","SimSun",serif;margin:0}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px 100px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:12px 16px;border-bottom:3px double var(--seal2);
+  background:linear-gradient(180deg,var(--paper2),var(--paper));position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:baseline;gap:8px}
+.brand h1{font-size:20px;letter-spacing:3px;color:var(--seal2)}
+.brand span{font-size:11px;color:var(--ink2)}
+.top-actions{display:flex;gap:6px}
+.mini{border:1px solid var(--line);background:var(--paper2);color:var(--ink2);
+  font-size:12px;padding:5px 9px;border-radius:6px}
+.mini:active{background:var(--line)}
+.bar{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.chip{display:flex;align-items:center;gap:6px;background:#fffaf0;border:1px solid var(--line);
+  border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--ink2)}
+.chip b{color:var(--ink);font-weight:600}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--seal)}
+.chip.ap .dot{background:var(--gold)}
+.section-title{display:flex;align-items:center;gap:8px;margin:18px 0 8px;font-size:13px;
+  color:var(--ink2);letter-spacing:2px}
+.section-title::before{content:"";width:4px;height:14px;background:var(--seal);border-radius:2px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{background:#fffaf0;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.stat .row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px}
+.stat .k{color:var(--ink2)}
+.stat .v{font-weight:700;font-size:15px}
+.track{height:6px;background:#e9dcc3;border-radius:4px;margin-top:5px;overflow:hidden}
+.fill{height:100%;border-radius:4px;background:var(--seal);transition:width .25s}
+.fill.jade{background:var(--jade)}
+.fill.gold{background:var(--gold)}
+.rankbox{background:#fffaf0;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:6px}
+.rankbox .cur{display:flex;justify-content:space-between;align-items:center}
+.rankbox .cur .lv{font-size:22px;font-weight:700;letter-spacing:2px;font-family:"Noto Serif SC",serif}
+.rankbox .next{font-size:12px;color:var(--ink2);margin-top:6px}
+.ladder{display:flex;gap:4px;margin-top:10px;flex-wrap:wrap}
+.step{font-size:11px;padding:3px 7px;border-radius:6px;background:#efe7d5;color:#9a8c72;border:1px solid transparent}
+.step.done{background:#e4dcc4;color:var(--jade);border-color:#cdc0a2}
+.step.now{background:var(--seal);color:#fff;border-color:var(--seal);font-weight:700}
+.step.throne{background:#3a2c1a;color:#e7c873}
+.acts{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.act{background:#fffaf0;border:1px solid var(--line);border-radius:10px;padding:10px 11px;text-align:left;color:var(--ink);position:relative}
+.act:active{background:#f3ead7}
+.act .nm{font-weight:600;font-size:14px;display:flex;justify-content:space-between;gap:6px}
+.act .nm .cost{font-size:11px;color:var(--gold);font-weight:700;white-space:nowrap}
+.act .ds{font-size:11.5px;color:var(--ink2);margin-top:3px}
+.act:disabled{opacity:.42;cursor:not-allowed}
+.log{background:#fffaf0;border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+  max-height:230px;overflow:auto;font-size:13px}
+.log p{margin:4px 0;color:var(--ink2)}
+.log p.good{color:var(--jade)}
+.log p.bad{color:var(--seal)}
+.log p.sys{color:var(--gold);font-weight:600}
+.footbar{position:fixed;left:0;right:0;bottom:0;z-index:25;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(0deg,var(--paper2),rgba(230,217,189,.94));border-top:2px solid var(--seal2)}
+.footbar .inner{max-width:760px;margin:0 auto;display:flex;gap:8px}
+.endbtn{flex:1;background:var(--seal);color:#fff;border:none;border-radius:10px;
+  padding:13px;font-size:15px;letter-spacing:2px;font-weight:600}
+.endbtn:active{background:var(--seal2)}
+.endbtn:disabled{background:#b9a891}
+.thronebtn{flex:1.3;background:linear-gradient(135deg,#7a1c12,#a9822f);color:#fff;border:none;border-radius:10px;
+  padding:13px;font-size:15px;letter-spacing:2px;font-weight:700}
+.thronebtn:disabled{background:#8a7a63;color:#efe6d2}
+.mask{position:fixed;inset:0;background:rgba(20,15,8,.55);display:flex;align-items:center;justify-content:center;
+  z-index:40;padding:18px}
+.mask.hide{display:none}
+.dialog{background:var(--paper);border:1px solid var(--line);border-radius:14px;max-width:520px;width:100%;
+  padding:18px 18px 16px;box-shadow:var(--shadow);max-height:86vh;overflow:auto}
+.dialog h3{font-size:18px;color:var(--seal2);letter-spacing:1px;margin-bottom:8px}
+.dialog .body{font-size:14px;color:var(--ink);line-height:1.65}
+.dialog .body p{margin:6px 0}
+.opt{display:block;width:100%;text-align:left;background:#fffaf0;border:1px solid var(--line);
+  border-radius:10px;padding:11px 13px;margin-top:9px;color:var(--ink);font-size:14px}
+.opt:active{background:#f3ead7}
+.opt small{display:block;color:var(--ink2);font-size:11.5px;margin-top:3px}
+.start{max-width:640px;margin:0 auto;padding:34px 18px}
+.start h1{font-size:30px;letter-spacing:8px;color:var(--seal2);text-align:center}
+.start .sub{text-align:center;color:var(--ink2);font-size:13px;margin-top:8px;letter-spacing:2px}
+.card{background:#fffaf0;border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:22px}
+.card label{font-size:13px;color:var(--ink2)}
+.card input{width:100%;margin-top:6px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;
+  font-size:15px;background:#fff;color:var(--ink);font-family:inherit}
+.origins{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:6px}
+.origin{background:#fffaf0;border:1px solid var(--line);border-radius:10px;padding:11px;text-align:left;color:var(--ink)}
+.origin.sel{border-color:var(--seal);background:#f6e9d8;box-shadow:0 0 0 1px var(--seal) inset}
+.origin .nm{font-weight:700;font-size:14px}
+.origin .ds{font-size:11px;color:var(--ink2);margin-top:3px}
+.begin{width:100%;margin-top:18px;background:var(--seal);color:#fff;border:none;border-radius:11px;padding:14px;
+  font-size:16px;letter-spacing:4px;font-weight:600}
+.begin:active{background:var(--seal2)}
+.tip{text-align:center;color:var(--ink2);font-size:12px;margin-top:12px;line-height:1.7}
+.ending{position:fixed;inset:0;z-index:60;background:rgba(20,15,8,.82);display:flex;align-items:center;justify-content:center;padding:18px}
+.ending .box{background:var(--paper);border:1px solid var(--line);border-radius:16px;max-width:520px;width:100%;padding:24px 22px;text-align:center;box-shadow:var(--shadow)}
+.ending .title{font-size:26px;letter-spacing:4px;font-family:"Noto Serif SC",serif;color:var(--seal2);margin-bottom:10px}
+.ending .desc{font-size:14px;color:var(--ink2);line-height:1.75;margin-bottom:18px}
+.ending .again{background:var(--seal);color:#fff;border:none;border-radius:10px;padding:12px 26px;font-size:15px;letter-spacing:2px}
+@media (min-width:560px){
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .acts{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<div id="startScreen" class="start">
+  <h1>布衣天子</h1>
+  <div class="sub">古 代 权 谋 · 从 最 底 层 到 龙 椅</div>
+  <div class="card">
+    <label>你的姓名</label>
+    <input id="nameInput" maxlength="8" placeholder="请输入姓名" autocomplete="off">
+    <div class="section-title" style="margin:14px 0 6px">选择出身</div>
+    <div class="origins" id="origins"></div>
+    <button class="begin" id="beginBtn">入 仕</button>
+    <p class="tip">架空王朝「大煦」· 布衣起家，凭谋略、政绩、圣恩步步高升。<br>官至极品、兵权在握之日，便是问鼎龙椅之时。</p>
+    <p class="tip" id="hasSaveTip" style="display:none">检测到旧存档，<a href="#" id="continueLink" style="color:var(--seal);font-weight:600">点击继续</a></p>
+  </div>
+</div>
+
+<div id="gameScreen" style="display:none">
+  <div class="top">
+    <div class="brand"><h1>布衣天子</h1><span id="eraLabel"></span></div>
+    <div class="top-actions">
+      <button class="mini" id="saveBtn">存档</button>
+      <button class="mini" id="resetBtn">重开</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="bar" id="bar"></div>
+    <div class="rankbox">
+      <div class="cur">
+        <div><div style="font-size:12px;color:var(--ink2)">现任官职</div>
+          <div class="lv" id="rankName">布衣</div></div>
+        <div style="text-align:right"><div style="font-size:12px;color:var(--ink2)">年俸</div>
+          <div id="rankIncome" style="font-weight:700">0 两</div></div>
+      </div>
+      <div class="next" id="nextReq"></div>
+      <div class="ladder" id="ladder"></div>
+    </div>
+    <div class="section-title">资质与局面</div>
+    <div class="stats" id="stats"></div>
+    <div class="section-title">本年可为（行动点 <span id="apInline">4</span>）</div>
+    <div class="acts" id="acts"></div>
+    <div class="section-title">起居录</div>
+    <div class="log" id="log"></div>
+  </div>
+  <div class="footbar"><div class="inner" id="footInner"></div></div>
+</div>
+
+<div class="mask hide" id="mask">
+  <div class="dialog">
+    <h3 id="evtTitle"></h3>
+    <div class="body" id="evtBody"></div>
+    <div id="evtOpts"></div>
+  </div>
+</div>
+
+<div class="ending" id="ending" style="display:none">
+  <div class="box">
+    <div class="title" id="endTitle"></div>
+    <div class="desc" id="endDesc"></div>
+    <button class="again" id="againBtn">重开人生</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+(function(){
+  var SAVE_KEY = 'bufu_tianzi_save_v1';
+
+  var ATTRS = [
+    {k:'strat',  n:'谋略', max:220, cls:''},
+    {k:'merit',  n:'政绩', max:520, cls:'jade'},
+    {k:'favor',  n:'圣恩', max:220, cls:'gold'},
+    {k:'fame',   n:'声望', max:180, cls:'jade'},
+    {k:'wealth', n:'财力', max:260, cls:'gold'},
+    {k:'army',   n:'兵权', max:140, cls:''},
+    {k:'health', n:'健康', max:100, cls:'jade'}
+  ];
+
+  var RANKS = [
+    {name:'布衣',   income:0,   need:null},
+    {name:'里正',   income:2,   need:{merit:10, strat:40}},
+    {name:'县丞',   income:5,   need:{merit:30, strat:50, favor:10}},
+    {name:'县令',   income:10,  need:{merit:60, favor:20, strat:60}},
+    {name:'知州',   income:16,  need:{merit:100, favor:40, fame:30}},
+    {name:'知府',   income:22,  need:{merit:150, favor:60, wealth:30}},
+    {name:'按察使', income:30,  need:{merit:200, favor:80, fame:60}},
+    {name:'布政使', income:40,  need:{merit:250, favor:100, strat:90}},
+    {name:'巡抚',   income:55,  need:{merit:300, favor:120, fame:80}},
+    {name:'尚书',   income:70,  need:{merit:360, favor:140, strat:110}},
+    {name:'首辅',   income:90,  need:{merit:420, favor:160, fame:100}},
+    {name:'权臣',   income:120, need:{merit:480, favor:170, army:30, strat:130}}
+  ];
+  var THRONE_RANK = RANKS.length - 1; // 权臣
+
+  var ORIGINS = [
+    {name:'寒门书生', ds:'家贫而志坚，谋略过人', b:{strat:12, wealth:-5, fame:-2}},
+    {name:'书香门第', ds:'世代清流，声望圣恩俱佳', b:{strat:5, fame:12, favor:6}},
+    {name:'商贾之家', ds:'家资殷实，起事不缺银钱', b:{wealth:30, fame:-6}},
+    {name:'将门之后', ds:'祖上军功，兵权根基深厚', b:{army:10, strat:4, fame:6}}
+  ];
+
+  var ACTIONS = [
+    {id:'serve', name:'投帖衙门', ds:'奔走吏途，政绩 +4、圣恩 +1', cost:1, minRank:0,
+      run:function(g){ g.merit+=4; g.favor+=1; g.health-=1; return {msg:'你奔走于衙门之间，谋得一份差事，始入仕途。'}; }},
+    {id:'study', name:'寒窗苦读', ds:'潜心经史，谋略增长，略损健康', cost:1, minRank:0,
+      run:function(g){ g.strat += 6 + Math.floor(g.rank*0.8); g.health-=1; return {msg:'案牍之外，你挑灯苦读，谋略精进。'}; }},
+    {id:'duty', name:'勤政为民', ds:'清理案牍，政绩与声望随官职增长', cost:1, minRank:1,
+      run:function(g){ g.merit += 5 + Math.floor(g.rank*1.2); g.fame += 2 + Math.floor(g.rank*0.6); g.health-=2; return {msg:'你勤于政务，百姓称颂，政绩渐丰。'}; }},
+    {id:'flatter', name:'逢迎圣意', ds:'耗银 5，圣恩 +6、声望 -2', cost:1, minRank:1, needWealth:5,
+      run:function(g){ g.wealth-=5; g.favor += 6 + g.rank; g.fame-=2; return {msg:'你厚礼进上，龙颜大悦。'}; }},
+    {id:'gather', name:'搜刮敛财', ds:'财力增，声望 -4、圣恩 -2', cost:1, minRank:1,
+      run:function(g){ g.wealth += 7 + g.rank*3; g.fame-=4; g.favor-=2; g.health-=1; return {msg:'你借机敛财，私库渐丰，然民间怨声渐起。'}; }},
+    {id:'social', name:'结交权贵', ds:'耗银 3，谋略 +3、圣恩 +1', cost:1, minRank:1, needWealth:3,
+      run:function(g){ g.wealth-=3; g.strat+=3; g.favor+=1; return {msg:'你广结同僚，耳目渐广。'}; }},
+    {id:'army', name:'暗蓄私兵', ds:'耗银 6，兵权增、圣恩 -3', cost:1, minRank:7, needWealth:6,
+      run:function(g){ g.wealth-=6; g.army += 3 + g.rank; g.favor-=3; g.health-=2; return {msg:'你阴养死士，兵权日盛，然圣上渐生疑虑。'}; }},
+    {id:'rest', name:'修身养性', ds:'健康 +8，延年益寿', cost:1, minRank:0,
+      run:function(g){ g.health+=8; return {msg:'你闭门谢客，调息养身。'}; }}
+  ];
+
+  // 事件库：每年末可能触发一次
+  var EVENTS = [
+    {id:'flood', minRank:1, title:'水患千里',
+      body:'黄河决堤，数县成泽国。灾民流离，奏报堆满案头。',
+      opts:[
+        {t:'开仓赈灾', h:'耗银 15，声望 +10，政绩 +8', run:function(g){g.wealth-=15;g.fame+=10;g.merit+=8;return '你开仓放粮，灾民感念，清名远播。';}},
+        {t:'隐瞒不报', h:'财力 +8，声望 -8，圣恩 -5', run:function(g){g.wealth+=8;g.fame-=8;g.favor-=5;return '你压下奏报，私吞赈银，纸终究包不住火。';}},
+        {t:'上疏请款', h:'政绩 +5，圣恩 +3，耗银 5', run:function(g){g.merit+=5;g.favor+=3;g.wealth-=5;return '你如实上疏，朝廷拨银赈济。';}}
+      ]},
+    {id:'impeach', minRank:3, title:'御史弹劾',
+      body:'御史台一纸弹章，指你结党营私、贪墨不法的旧账被翻了出来。',
+      opts:[
+        {t:'上表辩白', h:'耗银 10，圣恩 +5（圣恩低则风险）', run:function(g){g.wealth-=10;g.favor+=5;if(g.favor<60){g.merit-=15;return '你百口莫辩，圣上虽未深究，却记下了这笔账。';}return '你据理力争，圣上暂且信了你。';}},
+        {t:'认罪乞怜', h:'政绩 -20，圣恩 -10，保命', run:function(g){g.merit-=20;g.favor-=10;return '你伏地认罪，虽保官身，颜面扫地。';}},
+        {t:'反戈一击', h:'谋略高则反噬弹劾者', run:function(g){if(g.strat>=100){g.strat+=3;g.fame+=6;return '你抓住对方把柄反戈一击，弹劾者反被罢黜。';}g.merit-=18;g.favor-=12;return '你反戈不成，反坐实了罪名。';}}
+      ]},
+    {id:'suspect', minRank:7, title:'圣心难测',
+      body:'近来圣上频频问及你手中的兵权，宫中眼线回报：有人进谗言了。',
+      opts:[
+        {t:'自请削兵', h:'兵权 -10，圣恩 +8', run:function(g){g.army-=10;g.favor+=8;return '你上表自请削减部曲，圣上疑心稍解。';}},
+        {t:'韬光养晦', h:'健康 -4，圣恩 -3', run:function(g){g.health-=4;g.favor-=3;return '你闭门称病，不问政事，静观其变。';}},
+        {t:'加紧备战', h:'兵权 +8，圣恩 -10', run:function(g){g.army+=8;g.favor-=10;return '你暗中加紧部署，与朝廷渐行渐远。';}}
+      ]},
+    {id:'ally', minRank:2, title:'同僚相邀',
+      body:'一位炙手可热的权贵设宴相邀，席间暗示愿与你共进退。',
+      opts:[
+        {t:'结为朋党', h:'耗银 8，谋略 +5，圣恩 -2', run:function(g){g.wealth-=8;g.strat+=5;g.favor-=2;return '你与之歃血为盟，朝中势力又添一分。';}},
+        {t:'婉言谢绝', h:'圣恩 +3，声望 +2', run:function(g){g.favor+=3;g.fame+=2;return '你不愿结党，婉拒了这桩邀约。';}}
+      ]},
+    {id:'border', minRank:5, title:'边关告急',
+      body:'北虏犯边，烽火连天，朝廷议战议和，众说纷纭。',
+      opts:[
+        {t:'请缨督军', h:'兵权 +10，政绩 +10，健康 -8', run:function(g){g.army+=10;g.merit+=10;g.health-=8;return '你披甲督军，边关一战成名。';}},
+        {t:'按兵不动', h:'圣恩 -8', run:function(g){g.favor-=8;return '你按兵不动，坐失战机，朝野非议。';}}
+      ]},
+    {id:'birthday', minRank:2, title:'万寿献礼',
+      body:'圣上寿辰将近，百官争相献礼，你须在厚薄之间掂量。',
+      opts:[
+        {t:'备极厚礼', h:'耗银 12，圣恩 +10', run:function(g){g.wealth-=12;g.favor+=10;return '你献上稀世珍宝，圣上大喜。';}},
+        {t:'薄礼表意', h:'圣恩 -3，声望 +3', run:function(g){g.favor-=3;g.fame+=3;return '你只以清茶贺寿，落得个清廉名声。';}}
+      ]},
+    {id:'fraud', minRank:4, title:'科场舞弊',
+      body:'今科乡试爆出舞弊大案，牵涉多位要员，你恰在查办之列。',
+      opts:[
+        {t:'严查到底', h:'政绩 +15，声望 +8，耗银 5', run:function(g){g.merit+=15;g.fame+=8;g.wealth-=5;return '你铁面无私，一查到底，清誉更盛。';}},
+        {t:'睁眼闭眼', h:'财力 +12，声望 -10', run:function(g){g.wealth+=12;g.fame-=10;return '你收了封口银子，任其蒙混过关。';}}
+      ]},
+    {id:'revolt', minRank:6, title:'民变四起',
+      body:'苛政之下，数州饥民揭竿，官军镇压不利，事态愈演愈烈。',
+      opts:[
+        {t:'派兵镇压', h:'兵权 +6，声望 -8，圣恩 +4', run:function(g){g.army+=6;g.fame-=8;g.favor+=4;return '你调兵镇压，乱事平息，然血染青史。';}},
+        {t:'招抚安民', h:'声望 +10，耗银 12', run:function(g){g.fame+=10;g.wealth-=12;return '你开仓招抚，乱民归顺，万民称颂。';}}
+      ]},
+    {id:'sick', minRank:9, title:'天颜病危',
+      body:'宫中传出消息：圣上龙体欠安，恐难久持。诸王与外戚皆在暗中奔走。',
+      opts:[
+        {t:'静观其变', h:'谋略 +8', run:function(g){g.strat+=8;return '你按兵不动，冷眼旁观这盘棋局。';}},
+        {t:'拥立新君', h:'圣恩 +6，声望 +4，风险难料', run:function(g){g.favor+=6;g.fame+=4;return '你抢先拥立新君，成了从龙之臣。';}}
+      ]},
+    {id:'omen', minRank:3, title:'灾异示警',
+      body:'天现异象，钦天监奏称主凶，朝野人心惶惶。',
+      opts:[
+        {t:'上表请罪', h:'圣恩 +5，声望 +3', run:function(g){g.favor+=5;g.fame+=3;return '你上表自省，圣上赞你忠谨。';}},
+        {t:'粉饰太平', h:'财力 +6，声望 -6', run:function(g){g.wealth+=6;g.fame-=6;return '你命人粉饰祥瑞，压下异象。';}}
+      ]},
+    {id:'envoy', minRank:4, title:'敌国遣使',
+      body:'邻国遣使而来，言辞倨傲，朝中主战主和两派争执不下。',
+      opts:[
+        {t:'力主议和', h:'圣恩 +4，声望 -4', run:function(g){g.favor+=4;g.fame-=4;return '你主和息兵，虽得圣心，却遭主战派唾骂。';}},
+        {t:'请命主战', h:'兵权 +5，政绩 +5，健康 -4', run:function(g){g.army+=5;g.merit+=5;g.health-=4;return '你慷慨主战，朝野震动。';}}
+      ]},
+    {id:'family', minRank:2, title:'家中变故',
+      body:'家中长辈病故，按制当回乡守制，然政务正紧。',
+      opts:[
+        {t:'丁忧守制', h:'政绩 -5，健康 +8', run:function(g){g.merit-=5;g.health+=8;return '你回乡守孝，身心得以调养。';}},
+        {t:'夺情留任', h:'耗银 8，健康 -3', run:function(g){g.wealth-=8;g.health-=3;return '你夺情留任，政务不辍，然孝名有亏。';}}
+      ]}
+  ];
+
+  var G = null;
+  var selectedOrigin = 0;
+  var busy = false;
+
+  function $(id){ return document.getElementById(id); }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function rnd(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+
+  // ---------- 开始页 ----------
+  function renderOrigins(){
+    var box = $('origins'); box.innerHTML='';
+    ORIGINS.forEach(function(o,i){
+      var b=document.createElement('button');
+      b.className='origin'+(i===selectedOrigin?' sel':'');
+      b.innerHTML='<div class="nm">'+o.name+'</div><div class="ds">'+o.ds+'</div>';
+      b.onclick=function(){ selectedOrigin=i; renderOrigins(); };
+      box.appendChild(b);
+    });
+  }
+
+  // ---------- 新游戏 ----------
+  function newGame(name, originIdx){
+    var o = ORIGINS[originIdx];
+    G = {
+      name: name || '无名氏',
+      origin: o.name,
+      age: 20, year: 1, rank: 0, ap: 4,
+      strat: 30 + (o.b.strat||0),
+      merit: 0,
+      favor: 0 + (o.b.favor||0),
+      fame: 5 + (o.b.fame||0),
+      wealth: 10 + (o.b.wealth||0),
+      army: 0 + (o.b.army||0),
+      health: 100,
+      log: [], seenEvents: {}, over: false, throneTried: false
+    };
+    G.wealth = Math.max(0, G.wealth);
+    G.fame = Math.max(0, G.fame);
+    G.favor = Math.max(0, G.favor);
+    log('sys', '大煦年间，' + G.name + '以' + o.name + '之身入世，年方二十。');
+    $('startScreen').style.display='none';
+    $('gameScreen').style.display='block';
+    $('ending').style.display='none';
+    render(); save();
+  }
+
+  function log(cls, msg){
+    if(!G) return;
+    G.log.unshift({c:cls, m:msg});
+    if(G.log.length>60) G.log.length=60;
+  }
+
+  function fmt(v){ v=Math.round(v); return v; }
+
+  // ---------- 渲染 ----------
+  function render(){
+    if(!G || G.over) return;
+    $('eraLabel').textContent = '大煦 · 第 ' + G.year + ' 年';
+    $('apInline').textContent = G.ap;
+
+    // 顶栏
+    var bar = $('bar'); bar.innerHTML='';
+    var chips = [
+      ['姓名', G.name, ''],
+      ['年龄', G.age + ' 岁', ''],
+      ['官职', RANKS[G.rank].name, ''],
+      ['行动点', G.ap, 'ap']
+    ];
+    chips.forEach(function(c){
+      var d=document.createElement('div');
+      d.className='chip'+(c[2]?' '+c[2]:'');
+      d.innerHTML='<span class="dot"></span>'+c[0]+' <b>'+c[1]+'</b>';
+      bar.appendChild(d);
+    });
+
+    // 官阶
+    $('rankName').textContent = RANKS[G.rank].name;
+    $('rankIncome').textContent = RANKS[G.rank].income + ' 两';
+
+    // 下一级需求
+    var nr = $('nextReq');
+    if(G.rank < THRONE_RANK){
+      var need = RANKS[G.rank+1].need;
+      var parts = [];
+      for(var key in need){
+        var label = attrName(key);
+        var cur = Math.max(0, Math.round(G[key]));
+        var ok = cur >= need[key];
+        parts.push('<span style="color:'+(ok?'var(--jade)':'var(--seal)')+'">'+label+' '+cur+'/'+need[key]+(ok?' ✓':'')+'</span>');
+      }
+      nr.innerHTML = '晋升【'+RANKS[G.rank+1].name+'】所需：' + parts.join('　');
+    } else {
+      nr.innerHTML = '<span style="color:var(--gold)">已居权臣之巅。兵权 ≥60、谋略 ≥150、声望 ≥100 时，可发动宫变问鼎。</span>';
+    }
+
+    // 官阶阶梯
+    var lad = $('ladder'); lad.innerHTML='';
+    RANKS.forEach(function(r,i){
+      var s=document.createElement('span');
+      s.className='step'+(i<G.rank?' done':(i===G.rank?' now':''));
+      s.textContent=r.name;
+      lad.appendChild(s);
+    });
+    var th=document.createElement('span');
+    th.className='step throne'+(G.rank>=THRONE_RANK?' ':'');
+    th.textContent='皇位';
+    lad.appendChild(th);
+
+    // 属性
+    var st=$('stats'); st.innerHTML='';
+    ATTRS.forEach(function(a){
+      var val=Math.max(0, Math.round(G[a.k]));
+      var pct=clamp(val/a.max*100,0,100);
+      var d=document.createElement('div'); d.className='stat';
+      d.innerHTML='<div class="row"><span class="k">'+a.n+'</span><span class="v">'+val+'</span></div>'+
+        '<div class="track"><div class="fill '+a.cls+'" style="width:'+pct+'%"></div></div>';
+      st.appendChild(d);
+    });
+
+    // 行动
+    var ac=$('acts'); ac.innerHTML='';
+    ACTIONS.forEach(function(a){
+      var btn=document.createElement('button'); btn.className='act';
+      var disabled = false, why='';
+      if(G.ap < a.cost){ disabled=true; why='行动点不足'; }
+      else if(G.rank < a.minRank){ disabled=true; why='需官职'+RANKS[a.minRank].name; }
+      else if(a.needWealth && G.wealth < a.needWealth){ disabled=true; why='银两不足'; }
+      btn.disabled=disabled;
+      btn.innerHTML='<div class="nm"><span>'+a.name+'</span><span class="cost">'+
+        (disabled?'⚠ '+why:'◈ '+a.cost+'点')+'</span></div><div class="ds">'+a.ds+'</div>';
+      if(!disabled){
+        btn.onclick=function(){ doAction(a); };
+      }
+      ac.appendChild(btn);
+    });
+
+    // 日志
+    var lg=$('log'); lg.innerHTML='';
+    G.log.slice(0,20).forEach(function(item){
+      var p=document.createElement('p');
+      if(item.c && item.c!=='') p.className=item.c;
+      p.textContent=item.m;
+      lg.appendChild(p);
+    });
+
+    // 底栏
+    var fi=$('footInner'); fi.innerHTML='';
+    var canThrone = G.rank>=THRONE_RANK && G.army>=60 && G.strat>=150 && G.fame>=100 && !G.throneTried;
+    if(G.rank>=THRONE_RANK){
+      var tb=document.createElement('button'); tb.className='thronebtn';
+      tb.disabled=!canThrone;
+      tb.textContent = canThrone ? '发动宫变 · 问鼎' : '宫变条件未满';
+      if(canThrone) tb.onclick=attemptThrone;
+      fi.appendChild(tb);
+    }
+    var eb=document.createElement('button'); eb.className='endbtn';
+    eb.textContent = '结束本年';
+    eb.onclick=endYear;
+    fi.appendChild(eb);
+  }
+
+  function attrName(k){
+    for(var i=0;i<ATTRS.length;i++){ if(ATTRS[i].k===k) return ATTRS[i].n; }
+    return k;
+  }
+
+  // ---------- 行动 ----------
+  function doAction(a){
+    if(busy || !G || G.over) return;
+    if(G.ap < a.cost) return;
+    if(G.rank < a.minRank) return;
+    if(a.needWealth && G.wealth < a.needWealth) return;
+    var res = a.run(G);
+    G.ap -= a.cost;
+    // 属性兜底
+    G.strat=Math.max(0,G.strat); G.merit=Math.max(0,G.merit);
+    G.favor=Math.max(0,G.favor); G.fame=Math.max(0,G.fame);
+    G.wealth=Math.max(0,G.wealth); G.army=Math.max(0,G.army);
+    G.health=Math.min(100,G.health);
+    if(res) log('', res.msg);
+    render(); save();
+  }
+
+  // ---------- 结束本年 ----------
+  function endYear(){
+    if(busy || !G || G.over) return;
+    busy = true;
+    G.year += 1; G.age += 1;
+
+    // 自然衰减
+    var decay = G.age>55 ? 3 : 1;
+    G.health -= decay;
+    if(G.age>65) G.health -= (G.age-65)*0.6;
+    // 俸禄
+    G.wealth += RANKS[G.rank].income;
+    log('', '岁末。你年'+G.age+'，领年俸'+RANKS[G.rank].income+'两。');
+
+    if(G.health <= 0){ return finishEnding('died'); }
+
+    // 事件
+    var ev = rollEvent();
+    if(ev){ return showEvent(ev); }
+
+    afterYear();
+  }
+
+  function rollEvent(){
+    // 15% 无事件
+    if(Math.random() < 0.15) return null;
+    var pool = EVENTS.filter(function(e){
+      return G.rank >= e.minRank && !G.seenEvents[e.id];
+    });
+    if(!pool.length){
+      // 都看过了，允许重复
+      pool = EVENTS.filter(function(e){ return G.rank >= e.minRank; });
+    }
+    if(!pool.length) return null;
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+
+  function showEvent(ev){
+    $('evtTitle').textContent = ev.title;
+    $('evtBody').innerHTML = '<p>'+ev.body+'</p>';
+    var box=$('evtOpts'); box.innerHTML='';
+    ev.opts.forEach(function(o){
+      var b=document.createElement('button'); b.className='opt';
+      b.innerHTML = o.t + '<small>' + o.h + '</small>';
+      b.onclick=function(){
+        var msg = o.run(G);
+        G.seenEvents[ev.id]=true;
+        G.strat=Math.max(0,G.strat); G.merit=Math.max(0,G.merit);
+        G.favor=Math.max(0,G.favor); G.fame=Math.max(0,G.fame);
+        G.wealth=Math.max(0,G.wealth); G.army=Math.max(0,G.army);
+        G.health=Math.min(100,G.health);
+        log(msg.indexOf('反')>=0||msg.indexOf('罪')>=0?'bad':'', msg);
+        $('mask').classList.add('hide');
+        afterYear();
+      };
+      box.appendChild(b);
+    });
+    $('mask').classList.remove('hide');
+  }
+
+  function afterYear(){
+    // 晋升检查
+    if(G.rank < THRONE_RANK){
+      var need = RANKS[G.rank+1].need;
+      var ok = true;
+      for(var key in need){ if((G[key]||0) < need[key]){ ok=false; break; } }
+      if(ok){
+        G.rank += 1;
+        log('sys', '圣旨下：擢升你为【'+RANKS[G.rank].name+'】！');
+      }
+    }
+    // 寿终
+    if(G.age >= 72){
+      G.over = true;
+      busy = false;
+      if(G.rank >= THRONE_RANK) return finishEnding('regent');
+      return finishEnding('retire');
+    }
+    // 健康
+    if(G.health <= 0){ return finishEnding('died'); }
+
+    G.ap = 4;
+    busy = false;
+    render(); save();
+  }
+
+  // ---------- 宫变 ----------
+  function attemptThrone(){
+    if(!G || G.over) return;
+    if(G.rank < THRONE_RANK || G.army<60 || G.strat<150 || G.fame<100) return;
+    var rate = clamp(Math.round(G.army/2 + G.strat/2 + G.fame/3 - 80), 5, 95);
+    G.throneTried = true;
+    $('evtTitle').textContent = '宫变之夜';
+    $('evtBody').innerHTML = '<p>你集结心腹死士，兵临宫阙。成败在此一举——胜则黄袍加身，败则身死名裂。</p>'+
+      '<p style="color:var(--seal)">胜算评估：约 '+rate+'%</p>';
+    var box=$('evtOpts'); box.innerHTML='';
+    var b1=document.createElement('button'); b1.className='opt';
+    b1.innerHTML='孤注一掷，起兵<small>按当前实力发动政变</small>';
+    b1.onclick=function(){ $('mask').classList.add('hide'); resolveThrone(rate); };
+    var b2=document.createElement('button'); b2.className='opt';
+    b2.innerHTML='收手，静待时机<small>保留实力，来年再说</small>';
+    b2.onclick=function(){ $('mask').classList.add('hide'); G.throneTried=false; render(); };
+    box.appendChild(b1); box.appendChild(b2);
+    $('mask').classList.remove('hide');
+  }
+
+  function resolveThrone(rate){
+    G.over = true;
+    if(rnd(1,100) <= rate){
+      return finishEnding('emperor');
+    } else {
+      var r = rnd(1,3);
+      if(r===1) return finishEnding('killed');
+      if(r===2) return finishEnding('exile');
+      return finishEnding('imprisoned');
+    }
+  }
+
+  // ---------- 结局 ----------
+  var ENDINGS = {
+    emperor:{t:'黄袍加身', d:'宫门洞开，百官俯首。你登上丹墀，受禅称帝，国号自定。从布衣到九五之尊，这一路尸山血海，终成千古一帝。'},
+    killed:{t:'兵败身死', d:'宫变事泄，禁军反扑。你血战至最后一刻，倒在丹墀之下。史书只留一行：逆臣伏诛。'},
+    exile:{t:'削职流放', d:'事败之后，新君念你旧功，免你一死，削职流放岭南。余生瘴疠之地，再未踏入京城一步。'},
+    imprisoned:{t:'幽禁终身', d:'宫变失败，你被囚于冷宫偏殿。铁窗之外，是你曾无限接近的龙椅。'},
+    died:{t:'积劳成疾', d:'多年案牍劳形、殚精竭虑，你的身体终于垮了。药石无灵，你溘然长逝于任上。'},
+    retire:{t:'衣锦还乡', d:'年届古稀，你上书乞骸骨，荣归故里。一生宦海沉浮，终得善终，青史留名。'},
+    regent:{t:'位极人臣', d:'你权倾朝野，却终究没有迈出那最后一步。以人臣之身终老，庙堂之上，你的名字无人敢轻提。'}
+  };
+
+  function finishEnding(type){
+    G.over = true; busy = false;
+    var e = ENDINGS[type] || ENDINGS.died;
+    $('endTitle').textContent = e.t;
+    var rankName = RANKS[G.rank].name;
+    $('endDesc').innerHTML = e.d + '<br><br><span style="color:var(--ink)">'+
+      G.name+' · 享年'+G.age+'岁 · 终官'+rankName+'</span>';
+    $('ending').style.display='flex';
+    save();
+  }
+
+  // ---------- 存档 ----------
+  function save(){
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(G)); }catch(e){}
+  }
+  function load(){
+    try{
+      var raw = localStorage.getItem(SAVE_KEY);
+      if(!raw) return null;
+      var g = JSON.parse(raw);
+      if(!g || typeof g.rank!=='number') return null;
+      return g;
+    }catch(e){ return null; }
+  }
+  function resume(g){
+    G = g; G.over = false;
+    // 保证字段完整
+    if(!G.seenEvents) G.seenEvents={};
+    $('startScreen').style.display='none';
+    $('gameScreen').style.display='block';
+    $('ending').style.display='none';
+    render();
+  }
+
+  // ---------- 绑定 ----------
+  function init(){
+    renderOrigins();
+
+    var saved = load();
+    if(saved && !saved.over){
+      $('hasSaveTip').style.display='block';
+    }
+
+    $('beginBtn').onclick=function(){
+      var name = $('nameInput').value.trim();
+      if(!name){ name = '无名氏'; }
+      newGame(name, selectedOrigin);
+    };
+    $('continueLink').onclick=function(e){
+      e.preventDefault();
+      var g=load(); if(g){ resume(g); }
+    };
+    $('saveBtn').onclick=function(){ save(); log('sys','已存档。'); render(); };
+    $('resetBtn').onclick=function(){
+      if(confirm('确定要重开人生吗？当前存档将被清除。')){
+        try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+        G=null; $('gameScreen').style.display='none';
+        $('ending').style.display='none';
+        $('startScreen').style.display='block';
+        $('hasSaveTip').style.display='none';
+        $('nameInput').value='';
+        selectedOrigin=0; renderOrigins();
+      }
+    };
+    $('againBtn').onclick=function(){
+      try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+      G=null; $('ending').style.display='none';
+      $('gameScreen').style.display='none';
+      $('startScreen').style.display='block';
+      $('hasSaveTip').style.display='none';
+      $('nameInput').value='';
+      selectedOrigin=0; renderOrigins();
+    };
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
